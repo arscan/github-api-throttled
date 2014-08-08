@@ -33,7 +33,7 @@ app.get("/users/:user", function(req,res){
     reqHandler("users/" + req.params.user, res);
 });
 
-app.get("/repo/:user/:repo", function(req,res){
+app.get("/repos/:user/:repo", function(req,res){
     reqHandler("repos/" + req.params.user + "/" + req.params.repo, res);
 });
 
