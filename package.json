@@ -1,0 +1,16 @@
+{
+  "name": "github-api-throttled",
+  "version": "0.0.0",
+  "description": "A nodejs microservice that throttles api requests to github and caches results",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "robscanlon@gmail.com",
+  "license": "MIT",
+  "dependencies": {
+    "nconf": "~0.6.9",
+    "express": "~4.6.1",
+    "request": "~2.40.0"
+  }
+}
