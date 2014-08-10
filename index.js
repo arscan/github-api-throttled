@@ -30,15 +30,15 @@ if(fs.existsSync(__dirname + "/" + CACHE_FILENAME)){
 }
 
 app.get("/users/:user", function(req,res){
-    reqHandler("users/" + req.params.user, res);
+    reqHandler("users/" + req.params.user, res, ['location']);
 });
 
 app.get("/repos/:user/:repo", function(req,res){
-    reqHandler("repos/" + req.params.user + "/" + req.params.repo, res);
+    reqHandler("repos/" + req.params.user + "/" + req.params.repo, res, ['size', 'stargazers_count', 'language']);
 });
 
 
-function reqHandler(entity, res){
+function reqHandler(entity, res, filter){
     /* check to see if the entity is in the cache */
 
     if(entities[entity]){
@@ -52,7 +52,7 @@ function reqHandler(entity, res){
     if(Date.now() - parseInt(conf.get("GITHUB_API_WAIT_FOR"),10) > lastLookup) {
         console.log("Remaining: " + rateRemaining + " CacheHits: " + hitCount + " Ignored: " + missCount + " Looking Up: " + entity);
         hitCount = 0; missCount = 0;
-        callApi(entity, res);
+        callApi(entity, res, filter);
         lastLookup = Date.now();
     } else {
         missCount++;
@@ -61,7 +61,7 @@ function reqHandler(entity, res){
 };
 
 
-function callApi(entity, res){
+function callApi(entity, res, filter){
     var requestOpts = {};
 
     if(Date.now() < pauseUntil){
@@ -109,9 +109,18 @@ function callApi(entity, res){
             pauseUntil = parseInt(response.headers['x-ratelimit-reset'], 10);
         }
 
-        entities[entity] = JSON.parse(body);
+        var ret = {};
+        var body = JSON.parse(body);
+
+        for(var i = 0; i<filter.length; i++){
+            console.log("checking " + filter[i]);
+            ret[filter[i]] = body[filter[i]];
+        }
+
+        console.log(ret);
+        entities[entity] = ret;
     
-        res.send(body);
+        res.send(ret);
 
     });
 }
