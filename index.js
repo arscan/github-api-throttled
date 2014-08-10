@@ -113,11 +113,9 @@ function callApi(entity, res, filter){
         var body = JSON.parse(body);
 
         for(var i = 0; i<filter.length; i++){
-            console.log("checking " + filter[i]);
             ret[filter[i]] = body[filter[i]];
         }
 
-        console.log(ret);
         entities[entity] = ret;
     
         res.send(ret);
