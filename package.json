@@ -9,8 +9,9 @@
   "author": "robscanlon@gmail.com",
   "license": "MIT",
   "dependencies": {
-    "nconf": "~0.6.9",
     "express": "~4.6.1",
+    "nconf": "~0.6.9",
+    "redis": "^0.12.1",
     "request": "~2.40.0"
   }
 }

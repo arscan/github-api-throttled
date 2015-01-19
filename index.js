@@ -2,32 +2,28 @@ var http = require('http'),
     fs = require("fs"),
     util = require('util'),
     conf = require('nconf'),   
+    redis = require('redis'),
+    client= redis.createClient(),
     express = require('express'),
     request = require('request'),
     app = express(),
     webserver = http.createServer(app);
 
-var entities = {},
-    lastLookup = Date.now(),
+var lastLookup = Date.now(),
     sentLowNotice = false,
     pauseUntil = 0,
     hitCount=0,
     missCount=0,
     rateRemaining=-1;
 
-var CACHE_FILENAME = "entities_cache.json",
-   url = 'https://api.github.com/',
+var url = 'https://api.github.com/',
    userAgent = 'github.com/arscan/github-api-throttled';
 
   
 conf.env().argv().file({file: __dirname + "/config.json"}).defaults({
     'GITHUB_API_WAIT_FOR': 5000,
-    'GITHUB_PORT': '8080'
+    'PORT': '8080',
 });
-
-if(fs.existsSync(__dirname + "/" + CACHE_FILENAME)){
-    entities = JSON.parse(fs.readFileSync(__dirname + "/" + CACHE_FILENAME, 'utf8'));
-}
 
 app.get("/users/:user", function(req,res){
     reqHandler("users/" + req.params.user, res, ['location']);
@@ -41,25 +37,25 @@ app.get("/repos/:user/:repo", function(req,res){
 function reqHandler(entity, res, filter){
     /* check to see if the entity is in the cache */
 
-    if(entities[entity]){
-        hitCount++;
-        res.send(JSON.stringify(entities[entity]));
-        return;
-    }
+    client.hget("github_throttled", entity, function(err, obj){
+        if(obj){
+            console.log("found " + entity + ": " + obj);
+            res.send(JSON.stringify(obj));
+        } else {
+            /* not in the cache, see if I can make the call yet */
+            if(Date.now() - parseInt(conf.get("GITHUB_API_WAIT_FOR"),10) > lastLookup) {
+                console.log("Remaining: " + rateRemaining + " CacheHits: " + hitCount + " Ignored: " + missCount + " Looking Up: " + entity);
+                hitCount = 0; missCount = 0;
+                callApi(entity, res, filter);
+                lastLookup = Date.now();
+            } else {
+                missCount++;
+                res.send("{}");
+            }
+        }
+    });
 
-    /* not in the cache, see if I can make the call yet */
-
-    if(Date.now() - parseInt(conf.get("GITHUB_API_WAIT_FOR"),10) > lastLookup) {
-        console.log("Remaining: " + rateRemaining + " CacheHits: " + hitCount + " Ignored: " + missCount + " Looking Up: " + entity);
-        hitCount = 0; missCount = 0;
-        callApi(entity, res, filter);
-        lastLookup = Date.now();
-    } else {
-        missCount++;
-        res.send("{}");
-    }
 };
-
 
 function callApi(entity, res, filter){
     var requestOpts = {};
@@ -116,19 +112,12 @@ function callApi(entity, res, filter){
             ret[filter[i]] = body[filter[i]];
         }
 
-        entities[entity] = ret;
+        client.hset("github_throttled", entity, JSON.stringify(ret));
     
         res.send(ret);
 
     });
 }
 
-function saveUsers(){
-    fs.writeFile(__dirname + '/' + CACHE_FILENAME, JSON.stringify(entities), function(){
-        console.log("_____saved entities");
-    });
-}
-
-setInterval(saveUsers, 300000);
-
-app.listen(conf.get('GITHUB_PORT'));
+app.listen(conf.get('PORT'));
+console.log('started on ' + conf.get('PORT'));
