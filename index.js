@@ -40,7 +40,7 @@ function reqHandler(entity, res, filter){
     client.hget("github_throttled", entity, function(err, obj){
         if(obj){
             console.log("found " + entity + ": " + obj);
-            res.send(JSON.stringify(obj));
+            res.send(obj);
         } else {
             /* not in the cache, see if I can make the call yet */
             if(Date.now() - parseInt(conf.get("GITHUB_API_WAIT_FOR"),10) > lastLookup) {
