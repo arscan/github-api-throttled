@@ -42,8 +42,8 @@ function reqHandler(entity, res, filter){
             console.log("found " + entity + ": " + obj);
             res.send(obj);
         } else {
-            /* not in the cache, see if I can make the call yet */
-            if(Date.now() - parseInt(conf.get("GITHUB_API_WAIT_FOR"),10) > lastLookup) {
+            /* not in the cache, see if I can make the call yet. add randomness  */
+            if(Date.now() - parseInt(conf.get("GITHUB_API_WAIT_FOR"),10) > lastLookup && Math.random() < .5) {
                 console.log("Remaining: " + rateRemaining + " CacheHits: " + hitCount + " Ignored: " + missCount + " Looking Up: " + entity);
                 hitCount = 0; missCount = 0;
                 callApi(entity, res, filter);
